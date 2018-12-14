@@ -23,7 +23,7 @@ public class poj1743
             if(a<10)
             {
                 out.println(0);
-                break;
+                continue;
             }
             int p2[]=new int[a-1];
             for(int i=0;i<a-1;++i)

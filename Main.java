@@ -9,53 +9,105 @@ public class Main {
 
     public static void main(String[] args)
     {
-        int a;
-        a=in.nextInt();
-        String p;
-        int cas=0;
-        while(a--!=0)
-        {
-            cas++;
-            p=in.next();
-            int len=0;
-            SAM part=new SAM();
-            part.init(2*p.length()+2,26);
-            SAM_node cur=part.root;
-            out.println("Case #"+cas+":");
-            for(int i=0;i<p.length();++i)
-            {
-                if (cur.next[p.charAt(i) - 'a'] == null)
-                {
-                    if (cur != part.root)
-                    {
-                        out.println(len+" "+(cur.firstpos-len+1));
-                        len = 0;
-                        cur = part.root;
-                    }
-                    if (part.root.next[p.charAt(i) - 'a'] == null)
-                    {
-                        out.println(-1+" "+(int)p.charAt(i));
-                        part.insert(p.charAt(i) - 'a');
-                        len = 0;
-                        continue;
-                    }
 
-                }
-                part.insert(p.charAt(i) - 'a');
-                cur = cur.next[p.charAt(i) - 'a'];
-                len++;
-            }
-            if (cur != part.root)
-                out.println(len+" "+(cur.firstpos-len+1));
-        }
         out.flush();
         out.close();
+    }
+}
+class EXSAM_node
+{
+    EXSAM_node next[],pre;
+    int step,cnt[];
+    EXSAM_node(int sigma,int sum)
+    {
+        next=new EXSAM_node[sigma];
+        Arrays.fill(next,null);
+        step=0;
+        cnt=new int[sum];
+        Arrays.fill(cnt,0);
+    }
+}
+class EXSAM
+{
+    EXSAM_node root,last,EXSAM_pool[],pool[];
+    int d[],cur,sigma,sum;
+    void init(int a,int b,int c)
+    {
+        d=new int[a];
+        pool=new EXSAM_node[a];
+        EXSAM_pool=new EXSAM_node[a];
+        EXSAM_pool[0]=new EXSAM_node(b,c);
+        sigma=b;
+        root=last=EXSAM_pool[0];
+        cur=1;
+        sum=c;
+    }
+    void insert(int w,int k)
+    {
+        EXSAM_node p = last;
+        if (p.next[w]!=null && p.next[w].step == p.step + 1)
+        {
+            last = p.next[w];
+            last.cnt[k]++;
+            //last->cnt[i]++;
+            //last->size++;
+            return;
+        }
+        EXSAM_pool[cur]=new EXSAM_node(sigma,sum);
+        EXSAM_node np=EXSAM_pool[cur];
+        cur++;
+        last=np;
+        np.step=p.step+1;
+        while (p!=null && p.next[w]==null)
+        {
+            p.next[w]=np;
+            p = p.pre;
+        }
+        if(p==null)
+        {
+            np.pre=root;
+        }
+        else
+        {
+            EXSAM_node q=p.next[w];
+            if(p.step+1==q.step)
+                np.pre=q;
+            else {
+                EXSAM_node nq = EXSAM_pool[cur++] = new EXSAM_node(sigma,sum);
+                nq.next = Arrays.copyOf(q.next, sigma);
+                nq.step = p.step + 1;
+                nq.pre = q.pre;
+                q.pre = nq;
+                np.pre = nq;
+                while (p != null && p.next[w]==(q)) {
+                    p.next[w] = nq;
+                    p = p.pre;
+                }
+            }
+        }
+        last.cnt[k]++;
+    }
+    void topo() {
+        // 求出parent树的拓扑序
+        int cnt = cur;
+        int maxVal = 0;
+        Arrays.fill(d, 0);
+        for (int i = 1; i < cnt; i++) {
+            maxVal = Math.max(maxVal, EXSAM_pool[i].step);
+
+            d[EXSAM_pool[i].step]++;
+        }
+        for (int i = 1; i <= maxVal; i++)
+            d[i] += d[i - 1];
+        for (int i = 1; i < cnt; i++)
+            pool[d[EXSAM_pool[i].step]--] = EXSAM_pool[i];
+        pool[0] = root;
     }
 }
 class SAM_node
 {
     SAM_node pre,next[];
-    int step,cnt,firstpos;
+    int step,cnt,firstpos,ans;
     SAM_node(int sigma)
     {
         next=new SAM_node[sigma];
@@ -64,6 +116,7 @@ class SAM_node
         cnt=0;
         pre=null;
         firstpos=0;
+        ans=0;
     }
 }
 class SAM
@@ -147,6 +200,18 @@ class InputReader{
         super();
         this.in = new BufferedReader(new InputStreamReader(in),BUF_SZ);
         tokenizer = new StringTokenizer("");
+    }
+    public boolean hasNext() {  //处理EOF
+        while (tokenizer == null || !tokenizer.hasMoreTokens()) {
+            try {
+                String line = in.readLine();
+                if(line == null) return false;
+                tokenizer = new StringTokenizer(line);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return true;
     }
     public String next() {
         while (!tokenizer.hasMoreTokens()) {
