@@ -6,191 +6,127 @@ public class Main {
 
     public static InputReader in = new InputReader(System.in);
     public static PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
-
-    public static void main(String[] args)
-    {
-
+    public static void main(String[] args) {
+        String s;
         out.flush();
         out.close();
     }
 }
-class EXSAM_node
+class Palindromic_Tree
 {
-    EXSAM_node next[],pre;
-    int step,cnt[];
-    EXSAM_node(int sigma,int sum)
+    int len[]; //以节点i为结尾的回文串的长度
+    int str[];//第i次添加的字符
+    int last;//
+    int point;//
+    int n;
+    int Next[][];//
+    int fail[];//类似于AC自动机的fail指针，指向失配后需要跳转到的节点（即为i的最长回文后缀且不为i）
+    int count[];//节点i表示的回文串在S中出现的次数（建树时求出的不是完全的，count()加上子节点以后才是正确的）
+    int num[];//以节点i回文串的末尾字符结尾的但不包含本条路径上的回文串的数目。(也就是fail指针路径的深度)
+    Palindromic_Tree(int N)
     {
-        next=new EXSAM_node[sigma];
-        Arrays.fill(next,null);
-        step=0;
-        cnt=new int[sum];
-        Arrays.fill(cnt,0);
+        n=N;
+        len=new int[N];
+        str=new int[N];
+        fail=new int[N];
+        count=new int[N];
+        num=new int[N];
+        Next=new int[N][26];
+    }
+    int newnode(int l)
+    {
+        for (int i = 0; i < 26; ++i)
+            Next[point][i] = 0;
+        count[point] = 0;
+        num[point] = 0;
+        len[point] = l;
+        return point++;
+    }
+    void init()
+    {
+        Arrays.fill(len,0);
+        Arrays.fill(str,0);
+        Arrays.fill(fail,0);
+        Arrays.fill(count,0);
+        Arrays.fill(num,0);
+        for(int i=0;i<n;++i)
+            Arrays.fill(Next[i],0);
+        point = 0;
+        newnode(0);
+        newnode(-1);
+        last = 0;
+        n = 0;
+        str[n] = -1;
+        fail[0] = 1;
+    }
+    int get_fail(int x)
+    {
+        while (str[n - len[x] - 1] != str[n])
+            x = fail[x];
+        return x;
+    }
+    int add(int c)
+    {
+        c -= 'a';
+        str[++n] = c;
+        int cur = get_fail(last);
+        if (Next[cur][c]==0)
+        {
+            int now = newnode(len[cur] + 2);
+            fail[now] = Next[get_fail(fail[cur])][c];
+            Next[cur][c] = now;
+            num[now] = num[fail[now]] + 1;
+        }
+        last = Next[cur][c];
+        count[last]++;
+        return num[last];
+    }
+    void counting()//统计本质相同的回文串的出现次数
+    {
+        for (int i = point-1; i >= 0; i--)//逆序累加，保证每个点都会比它的父亲节点先算完，于是父亲节点能加到所有子孙
+            count[fail[i]] += count[i];
     }
 }
-class EXSAM
+class manacher
 {
-    EXSAM_node root,last,EXSAM_pool[],pool[];
-    int d[],cur,sigma,sum;
-    void init(int a,int b,int c)
+    int cnt, len, ans = 0;
+    char ss[],s[];
+    int p[];
+    manacher(String str)
     {
-        d=new int[a];
-        pool=new EXSAM_node[a];
-        EXSAM_pool=new EXSAM_node[a];
-        EXSAM_pool[0]=new EXSAM_node(b,c);
-        sigma=b;
-        root=last=EXSAM_pool[0];
-        cur=1;
-        sum=c;
+        s=str.toCharArray();
+        ss=new char[s.length*2+10];
+        p=new int[s.length*2+10];
     }
-    void insert(int w,int k)
-    {
-        EXSAM_node p = last;
-        if (p.next[w]!=null && p.next[w].step == p.step + 1)
+    void init() {//将每两个字符中插入一个字符
+        len = s.length;
+        cnt = 1;
+        ss[0] = '!';
+        ss[cnt] = '#';
+        for (int i = 0; i < len; i++)
         {
-            last = p.next[w];
-            last.cnt[k]++;
-            //last->cnt[i]++;
-            //last->size++;
-            return;
+            ss[++cnt] = s[i];
+            ss[++cnt] = '#';
         }
-        EXSAM_pool[cur]=new EXSAM_node(sigma,sum);
-        EXSAM_node np=EXSAM_pool[cur];
-        cur++;
-        last=np;
-        np.step=p.step+1;
-        while (p!=null && p.next[w]==null)
-        {
-            p.next[w]=np;
-            p = p.pre;
-        }
-        if(p==null)
-        {
-            np.pre=root;
-        }
-        else
-        {
-            EXSAM_node q=p.next[w];
-            if(p.step+1==q.step)
-                np.pre=q;
-            else {
-                EXSAM_node nq = EXSAM_pool[cur++] = new EXSAM_node(sigma,sum);
-                nq.next = Arrays.copyOf(q.next, sigma);
-                nq.step = p.step + 1;
-                nq.pre = q.pre;
-                q.pre = nq;
-                np.pre = nq;
-                while (p != null && p.next[w]==(q)) {
-                    p.next[w] = nq;
-                    p = p.pre;
-                }
-            }
-        }
-        last.cnt[k]++;
+        ans = 0;
     }
-    void topo() {
-        // 求出parent树的拓扑序
-        int cnt = cur;
-        int maxVal = 0;
-        Arrays.fill(d, 0);
-        for (int i = 1; i < cnt; i++) {
-            maxVal = Math.max(maxVal, EXSAM_pool[i].step);
 
-            d[EXSAM_pool[i].step]++;
-        }
-        for (int i = 1; i <= maxVal; i++)
-            d[i] += d[i - 1];
-        for (int i = 1; i < cnt; i++)
-            pool[d[EXSAM_pool[i].step]--] = EXSAM_pool[i];
-        pool[0] = root;
-    }
-}
-class SAM_node
-{
-    SAM_node pre,next[];
-    int step,cnt,firstpos,ans;
-    SAM_node(int sigma)
-    {
-        next=new SAM_node[sigma];
-        Arrays.fill(next,null);
-        step=0;
-        cnt=0;
-        pre=null;
-        firstpos=0;
-        ans=0;
-    }
-}
-class SAM
-{
-    SAM_node SAM_pool[],root,last;
-    int d[];
-    SAM_node pool[];
-    int cur;
-    int sigma;
-    void topo() {
-        // 求出parent树的拓扑序
-        int cnt = cur;
-        int maxVal = 0;
-        Arrays.fill(d, 0);
-        for (int i = 1; i < cnt; i++) {
-            maxVal = Math.max(maxVal, SAM_pool[i].step);
-
-            d[SAM_pool[i].step]++;
-        }
-        for (int i = 1; i <= maxVal; i++)
-            d[i] += d[i - 1];
-        for (int i = 1; i < cnt; i++)
-            pool[d[SAM_pool[i].step]--] = SAM_pool[i];
-        pool[0] = root;
-    }
-    void init(int a,int b)
-    {
-        d=new int[a];
-        pool=new SAM_node[a];
-        SAM_pool=new SAM_node[a];
-        SAM_pool[0]=new SAM_node(b);
-        sigma=b;
-        root=last=SAM_pool[0];
-        cur=1;
-    }
-    void insert(int w)
-    {
-        SAM_node p=last;
-        SAM_pool[cur]=new SAM_node(sigma);
-        SAM_node np=SAM_pool[cur];
-        last=np;
-        cur++;
-        np.step=p.step+1;
-        np.firstpos = np.step - 1; //确定原串初始位置
-        while (p!=null && p.next[w]==null)
-        {
-            p.next[w]=np;
-            p = p.pre;
-        }
-        if(p==null)
-        {
-            np.pre=root;
-        }
-        else
-        {
-            SAM_node q=p.next[w];
-            if(p.step+1==q.step)
-                np.pre=q;
-            else {
-                SAM_node nq = SAM_pool[cur++] = new SAM_node(sigma);
-                nq.next = Arrays.copyOf(q.next, sigma);
-                nq.firstpos = q.firstpos;
-                nq.step = p.step + 1;
-                nq.pre = q.pre;
-                q.pre = nq;
-                np.pre = nq;
-                while (p != null && p.next[w]==(q)) {
-                    p.next[w] = nq;
-                    p = p.pre;
-                }
+    void manacher1() {
+        int pos = 0, mx = 0;
+        for (int i = 1; i <= cnt; i++) {
+            if (i < mx) p[i] = Math.min(p[pos * 2 - i], mx - i);
+            else p[i] = 1;
+            while (ss[i + p[i]] == ss[i - p[i]]) p[i]++;
+            if (mx < i + p[i])
+            {
+                mx = i + p[i];
+                pos = i;
             }
+            ans = Math.max(ans, p[i] - 1);
         }
     }
 }
+
 
 class InputReader{
     private final static int BUF_SZ = 65536;
