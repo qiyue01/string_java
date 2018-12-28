@@ -6,8 +6,33 @@ public class Main {
 
     public static InputReader in = new InputReader(System.in);
     public static PrintWriter out = new PrintWriter(new OutputStreamWriter(System.out));
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         String s;
+        Palindromic_Tree pt=new Palindromic_Tree(1010);
+        int ans[][]=new int[1050][1050];
+        int a,b,l,r;
+        a=in.nextInt();
+        while (a--!=0)
+        {
+            s=in.next();
+            for(int i=0;i<s.length();++i)
+            {
+                pt.init();
+                for(int j=i;j<s.length();++j)
+                {
+                    pt.add(s.charAt(j));
+                    ans[i+1][j+1]=pt.point-2;
+                }
+            }
+            b=in.nextInt();
+            for(int i=0;i<b;++i)
+            {
+                l=in.nextInt();
+                r=in.nextInt();
+                out.println(ans[l][r]);
+            }
+        }
         out.flush();
         out.close();
     }
@@ -23,6 +48,7 @@ class Palindromic_Tree
     int fail[];//类似于AC自动机的fail指针，指向失配后需要跳转到的节点（即为i的最长回文后缀且不为i）
     int count[];//节点i表示的回文串在S中出现的次数（建树时求出的不是完全的，count()加上子节点以后才是正确的）
     int num[];//以节点i回文串的末尾字符结尾的但不包含本条路径上的回文串的数目。(也就是fail指针路径的深度)
+    int trans[];
     Palindromic_Tree(int N)
     {
         n=N;
@@ -32,6 +58,7 @@ class Palindromic_Tree
         count=new int[N];
         num=new int[N];
         Next=new int[N][26];
+        trans=new int[N];
     }
     int newnode(int l)
     {
@@ -49,8 +76,7 @@ class Palindromic_Tree
         Arrays.fill(fail,0);
         Arrays.fill(count,0);
         Arrays.fill(num,0);
-        for(int i=0;i<n;++i)
-            Arrays.fill(Next[i],0);
+        Arrays.fill(trans,0);
         point = 0;
         newnode(0);
         newnode(-1);
@@ -65,7 +91,7 @@ class Palindromic_Tree
             x = fail[x];
         return x;
     }
-    int add(int c)
+    void add(int c)
     {
         c -= 'a';
         str[++n] = c;
@@ -79,7 +105,7 @@ class Palindromic_Tree
         }
         last = Next[cur][c];
         count[last]++;
-        return num[last];
+        trans[n]=last;
     }
     void counting()//统计本质相同的回文串的出现次数
     {
