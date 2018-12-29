@@ -9,30 +9,6 @@ public class Main {
     public static void main(String[] args)
     {
         String s;
-        Palindromic_Tree pt=new Palindromic_Tree(1010);
-        int ans[][]=new int[1050][1050];
-        int a,b,l,r;
-        a=in.nextInt();
-        while (a--!=0)
-        {
-            s=in.next();
-            for(int i=0;i<s.length();++i)
-            {
-                pt.init();
-                for(int j=i;j<s.length();++j)
-                {
-                    pt.add(s.charAt(j));
-                    ans[i+1][j+1]=pt.point-2;
-                }
-            }
-            b=in.nextInt();
-            for(int i=0;i<b;++i)
-            {
-                l=in.nextInt();
-                r=in.nextInt();
-                out.println(ans[l][r]);
-            }
-        }
         out.flush();
         out.close();
     }
